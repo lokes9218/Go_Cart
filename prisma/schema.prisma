@@ -1,6 +1,6 @@
 generator client {
     provider        = "prisma-client-js"
-    previewFeatures = ["driverAdapters"]
+    // previewFeatures = ["driverAdapters"]
 }
 
 // Prisma ORM v7: connection URLs are configured in `prisma.config.ts` (not here).
