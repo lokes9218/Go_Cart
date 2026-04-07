@@ -1,9 +1,11 @@
 import {inngest} from './client';
-import {prisma} from '@lib/prisma';
+import prisma from '@/lib/prisma';
 
 export const SyncUserCreation = inngest.createFunction(
-    {id: 'sync-user-creation'},
-    {event:'clerk/user.created'},
+    {
+        id: 'sync-user-creation',
+        triggers: { event: 'clerk/user.created' }
+    },
     async({event}) => {
         const {data}=event;
         await prisma.user.create({
@@ -19,8 +21,10 @@ export const SyncUserCreation = inngest.createFunction(
 
 // #inngests to update user data on clerk user update events, and to delete user data on clerk user delete events can be added similarly
 export const SyncUserUpdate = inngest.createFunction(
-    {id: 'sync-user-update'},
-    {event:'clerk/user.updated'},
+    {
+        id: 'sync-user-update',
+        triggers: { event: 'clerk/user.updated' }
+    },
     async({event}) => {
         const {data}=event;
         await prisma.user.update({
@@ -35,8 +39,10 @@ export const SyncUserUpdate = inngest.createFunction(
 )
 // next deletion of user data on clerk user delete events
 export const SyncUserDeletion = inngest.createFunction(
-    {id: 'sync-user-deletion'},
-    {event:'clerk/user.deleted'},
+    {
+        id: 'sync-user-deletion',
+        triggers: { event: 'clerk/user.deleted' }
+    },
     async({event}) => {
         const {data}=event;
         await prisma.user.delete({
