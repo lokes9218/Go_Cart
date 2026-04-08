@@ -1,3 +1,8 @@
+🌐 Live Demo
+
+🚀 Explore the deployed application here:
+👉 https://go-cart-mainn-aklbw775o-lokeswarans-projects.vercel.app/
+
 <div align="center">
   <h1><img src="https://gocart-gs.vercel.app/favicon.ico" width="20" height="20" alt="GoCart Favicon">
    GoCart</h1>
@@ -12,6 +17,7 @@
 </div>
 
 ---
+
 
 ## 📖 Table of Contents
 
