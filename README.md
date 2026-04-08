@@ -1,7 +1,3 @@
-🌐 Live Demo
-
-🚀 Explore the deployed application here:
-👉 https://go-cart-mainn-aklbw775o-lokeswarans-projects.vercel.app/
 
 
 <div align="center">
@@ -18,6 +14,10 @@
 </div>
 
 ---
+🌐 Live Demo
+
+🚀 Explore the deployed application here:
+👉 https://go-cart-mainn-aklbw775o-lokeswarans-projects.vercel.app/
 
 ## 📖 Table of Contents
 
