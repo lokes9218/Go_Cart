@@ -1,4 +1,4 @@
-import { getAuth } from "@clerk/nextjs/server";
+import { currentUser, getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import client from "@/app/api/config/imageKit";
@@ -21,6 +21,27 @@ export async function POST(req) {
         if (!name || !username || !email || !contact || !address || !description || !image) {
             return NextResponse.json({ error: "All fields are required" }, { status: 400 });
         }
+
+        // Ensure user row exists locally before Store create to satisfy FK constraints.
+        const clerkUser = await currentUser();
+        const clerkEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || email;
+        const clerkName = `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || clerkUser?.username || name;
+        const clerkImage = clerkUser?.imageUrl || "";
+
+        await prisma.user.upsert({
+            where: { id: userId },
+            update: {
+                email: clerkEmail,
+                name: clerkName,
+                image: clerkImage,
+            },
+            create: {
+                id: userId,
+                email: clerkEmail,
+                name: clerkName,
+                image: clerkImage,
+            },
+        });
 
         // check if user is already registered as a store
         const store = await prisma.store.findFirst({
