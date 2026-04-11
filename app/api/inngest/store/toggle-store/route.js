@@ -1,22 +1,22 @@
-
-import {getauth} from "@clerk/nextjs/server"
+import { getAuth } from "@clerk/nextjs/server"
+import prisma from "@/lib/prisma"
+import { sellerauth } from "@/middlewares/sellerauth"
 // toggle the store 
 export async function POST(request) {
-    try{
-        const {userid}= await getauth(request)
-        if (!userid) {
-            return new Response(JSON.stringify({error: "Unauthorized"}), {status: 401})
+    try {
+        const { userId } = getAuth(request)
+
+        if (!userId) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
         }
+
+        const store = await sellerauth(userId)
+
         // toggle the store
-        // get the store from the database
-        const store = await prisma.store.findFirst({
-            where: {
-                ownerId: userid
-            }
-        })
         if (!store) {
-            return new Response(JSON.stringify({error: "Store not found"}), {status: 404})
+            return new Response(JSON.stringify({ error: "Store not found" }), { status: 404 })
         }
+
         // toggle the store status
         const updatedStore = await prisma.store.update({
             where: {
@@ -28,7 +28,7 @@ export async function POST(request) {
         })
         return new Response(JSON.stringify({ success: true, store: updatedStore }), { status: 200 })
     }
-    catch(error){
+    catch (error) {
         console.error("Error toggling store:", error);
         return new Response(JSON.stringify({ error: "Failed to toggle store" }), { status: 500 });
     }

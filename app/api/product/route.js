@@ -1,10 +1,10 @@
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import {userid} from "../../../middlewares/sellerauth.js"
+import { sellerauth } from "@/middlewares/sellerauth";
 export async function POST(req) {
     try{
         const { userId } = getAuth(req);
-        const store= await userid(userId);
+        const store = await sellerauth(userId);
         if(!store){
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

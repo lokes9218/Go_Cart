@@ -2,21 +2,21 @@ import prisma from '../lib/prisma.js';
 
 export async function sellerauth(userid){
     try{
-        const user= await prisma.store.findUnique({
+        const store = await prisma.store.findUnique({
             where:{
                 userId:userid   
 
             }
         });
-        if(!user){
-            return false;
+        if(!store){
+            return null;
         }
-        return true;
+        return store;
 
     }
     catch(error){
         console.error("Error checking seller authentication:", error);
-        return false;
+        return null;
     }
     
 }

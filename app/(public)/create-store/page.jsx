@@ -4,9 +4,12 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import toast from "react-hot-toast"
 import Loading from "@/components/Loading"
-
+import {useAuth, useUser} from "@clerk/nextjs"
+import {useRouter} from "next/navigation"
 export default function CreateStore() {
-
+    const {user} = useUser()
+    const { getToken } = useAuth()
+    const router = useRouter()
     const [alreadySubmitted, setAlreadySubmitted] = useState(false)
     const [status, setStatus] = useState("")
     const [loading, setLoading] = useState(true)
@@ -27,17 +30,74 @@ export default function CreateStore() {
     }
 
     const fetchSellerStatus = async () => {
-        // Logic to check if the store is already submitted
+        try {
+            // Logic to check if the store is already submitted
+            const token = await getToken()
+            const response = await fetch("/api/inngest/store/dashboard", {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            })
+            const data = await response.json()
 
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to fetch seller status")
+            }
 
-        setLoading(false)
+            if (data.store) {
+                setAlreadySubmitted(true)
+                if (data.store.status === "pending") {
+                    setStatus("pending")
+                    setMessage("Your store details have been submitted and are pending review. We will notify you once the review process is complete.")
+                }
+                else if (data.store.status === "approved") {
+                    setStatus("approved")
+                    setMessage("Congratulations! Your store has been approved. You can now access your dashboard and start adding products.")
+                    setTimeout(() => {
+                        router.push("/store/dashboard")
+                    }, 5000)
+                }
+                else if (data.store.status === "rejected") {
+                    setStatus("rejected")
+                    setMessage("We regret to inform you that your store application has been rejected. For more information, please contact our support team.")
+                }
+            }
+        }
+        catch (error) {
+            toast.error(error.message || "Failed to fetch seller status")
+        }
+        finally {
+            setLoading(false)
+        }
     }
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
         // Logic to submit the store details
+        const token = await getToken()
+        const formdata = new FormData()
+        formdata.append("name", storeInfo.name)
+        formdata.append("username", storeInfo.username)
+        formdata.append("description", storeInfo.description)
+        formdata.append("email", storeInfo.email)
+        formdata.append("contact", storeInfo.contact)
+        formdata.append("address", storeInfo.address)
+        formdata.append("image", storeInfo.image)
+        const response = await fetch("/api/inngest/store/create", {
+            method: "POST",
+            body: formdata,
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
 
+        const data = await response.json()
 
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to submit store details")
+        }
+
+        setAlreadySubmitted(true)
+        setStatus("pending")
+        setMessage("Your store details have been submitted successfully and are pending review. We will notify you once the review process is complete.")
     }
 
     useEffect(() => {

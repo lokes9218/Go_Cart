@@ -1,11 +1,9 @@
-import {getAuth} from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
 import {sellerauth} from "@/middlewares/sellerauth";
 export async function GET(request) {
     try{
         // get the user id from the url query parameters params
-        const {params}= new URL(request.url)
-        const userid = params.get('userid')
+        const { searchParams } = new URL(request.url)
+        const userid = searchParams.get('userid')
         // get the store details from the database
         // const store = await prisma.store.findFirst({
         //     where: {
