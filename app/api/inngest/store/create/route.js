@@ -1,20 +1,27 @@
-import { getAuth } from "@clerk/nextjs/server"; 
-import { NextResponse } from "next/server"; 
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import client from "@/app/api/config/imageKit";
 export async function POST(req) {
-    try{
+    try {
         const { userId } = getAuth(req);
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         const formData = await req.formData();
         const name = formData.get('name');
         const username = formData.get('username');
         const email = formData.get('email');
+        const contact = formData.get('contact');
         const address = formData.get('address');
         const description = formData.get('description');
         const image = formData.get('image');
 
-        if (!name || !username || !email || !address || !description || !image) {
+        if (!name || !username || !email || !contact || !address || !description || !image) {
             return NextResponse.json({ error: "All fields are required" }, { status: 400 });
         }
+
         // check if user is already registered as a store
         const store = await prisma.store.findFirst({
             where: { userId: userId }
@@ -29,32 +36,18 @@ export async function POST(req) {
             return NextResponse.json({ error: "Username is already taken" }, { status: 400 });
         }
 
-        const isusernameTaken = await prisma.store.findFirst({
-            where: { username: username }
-        }); 
-        if (isusernameTaken) {
-            return NextResponse.json({ error: "Username is already taken" }, { status: 400 });
-        }
-
         // #image to uplaod in imageKit
         const buffer = Buffer.from(await image.arrayBuffer());
         const response = await client.upload({
             file: buffer,
-            fileName: image.name,
+            fileName: image.name || `store-${userId}`,
         });
-        const imageUrl = response.url;
+        const logoUrl = response.url;
 
-
-        const optimizedImageUrl = client.url({
-            src: imageUrl,
-            transformation: [
-                {
-                    height: 300,
-                    width: 300,
-                    crop: "thumb",
-                },
-            ],
-        });
+        const optimizedLogoUrl = client.url({
+            src: logoUrl,
+            transformation: [{ height: 300, width: 300, crop: "maintain_ratio" }],
+        }) || logoUrl;
 
         const newStore = await prisma.store.create({
             data: {
@@ -63,22 +56,15 @@ export async function POST(req) {
                 email,
                 address,
                 description,
-                image: optimizedImageUrl,
+                contact,
+                logo: optimizedLogoUrl,
                 userId: userId
             }
         });
         return NextResponse.json({ message: "Store created successfully", store: newStore }, { status: 201 });
 
-    // prisma update the user role to seller
-        await prisma.user.update({
-            where: { id: userId },
-            data: { role: "seller" }
-        });
-
-
-
     }
-    catch(error){
+    catch (error) {
         console.error("Error creating store:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 
