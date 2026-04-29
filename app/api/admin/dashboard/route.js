@@ -5,10 +5,13 @@ import prisma from "@/lib/prisma";
 export async function GET(request) {
     try {
         const { userId } = getAuth(request);
-        const {storeid} = await request.json();
+        const storeid = request.nextUrl.searchParams.get("storeid");
         // check if the user is authenticated
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        if (!storeid) {
+            return NextResponse.json({ error: "storeid is required" }, { status: 400 });
         }
         // orders products
         const orders = await prisma.order.findMany({
@@ -36,3 +39,4 @@ export async function GET(request) {
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+

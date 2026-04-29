@@ -5,15 +5,28 @@ import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 import AdminNavbar from "./AdminNavbar"
 import AdminSidebar from "./AdminSidebar"
-
+import { useAuth } from "@clerk/nextjs"
 const AdminLayout = ({ children }) => {
-
+    const { getToken } = useAuth()
     const [isAdmin, setIsAdmin] = useState(false)
     const [loading, setLoading] = useState(true)
 
     const fetchIsAdmin = async () => {
-        setIsAdmin(true)
-        setLoading(false)
+        try{
+            const tok = await getToken()
+            const res = await fetch("/api/admin/isadmin", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${tok}`,
+                },
+            })
+            const data = await res.json()
+            setIsAdmin(data.isAdmin)
+            setLoading(false)
+        } catch (error) {
+            setLoading(false)
+        }   
     }
 
     useEffect(() => {

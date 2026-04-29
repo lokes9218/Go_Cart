@@ -1,5 +1,4 @@
-import AdminLayout from "@/components/admin/AdminLayout";
-
+import AdminGate from "@/components/auth/AdminGate";
 export const metadata = {
     title: "GoCart. - Admin",
     description: "GoCart. - Admin",
@@ -8,10 +7,8 @@ export const metadata = {
 export default function RootAdminLayout({ children }) {
 
     return (
-        <>
-            <AdminLayout>
-                {children}
-            </AdminLayout>
-        </>
+        <AdminGate>
+            {children}
+        </AdminGate>
     );
 }
