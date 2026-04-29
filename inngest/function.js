@@ -50,3 +50,54 @@ export const SyncUserDeletion = inngest.createFunction(
         })
     }
 )
+
+
+//ingestion of events related to store creation, update and deletion can be added similarly, with appropriate triggers and database operations. 
+export const SyncStoreCreation = inngest.createFunction(
+    {
+        id: 'sync-store-creation',  
+        triggers: { event: 'store.created' }
+    },
+    async({event}) => {
+        const {data}=event;
+        await prisma.store.create({
+            data: {
+                id: data.id,
+                name: data.name,
+                ownerId: data.ownerId,
+                isActive: data.isActive,
+            }
+        })
+    }
+)
+
+export const SyncStoreUpdate = inngest.createFunction(  
+    {
+        id: 'sync-store-update',
+        triggers: { event: 'store.updated' }
+    },
+    async({event}) => {
+        const {data}=event;     
+        await prisma.store.update({
+            where: {id: data.id},
+            data: {
+                name: data.name,
+                isActive: data.isActive,
+            }
+        })
+    }
+)
+
+export const SyncStoreDeletion = inngest.createFunction(
+    {
+        id: 'sync-store-deletion',
+        triggers: { event: 'store.deleted' }
+    },
+    async({event}) => {
+        const {data}=event;
+        await prisma.store.delete({
+            where: {id: data.id},
+        })
+    }   
+)
+

@@ -1,22 +1,35 @@
+
 'use client'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+import { format, subDays } from 'date-fns'
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export default function OrdersAreaChart({ allOrders }) {
 
     const safeOrders = Array.isArray(allOrders) ? allOrders : []
 
-    // Group orders by date
+    // Always render a chart, even when there are zero orders.
+    // Keeping the range fixed avoids a blank Recharts area.
+    const DAYS = 14
+    const today = new Date()
+
     const ordersPerDay = safeOrders.reduce((acc, order) => {
-        const date = new Date(order.createdAt).toISOString().split('T')[0] // format: YYYY-MM-DD
-        acc[date] = (acc[date] || 0) + 1
+        const createdAt = order?.createdAt
+        if (!createdAt) return acc
+
+        const dateKey = format(new Date(createdAt), 'yyyy-MM-dd')
+        acc[dateKey] = (acc[dateKey] || 0) + 1
         return acc
     }, {})
 
-    // Convert to array for Recharts
-    const chartData = Object.entries(ordersPerDay).map(([date, count]) => ({
-        date,
-        orders: count
-    }))
+    const chartData = Array.from({ length: DAYS }, (_, index) => {
+        const day = subDays(today, DAYS - 1 - index)
+        const dateKey = format(day, 'yyyy-MM-dd')
+        return {
+            date: dateKey,
+            orders: ordersPerDay[dateKey] || 0,
+        }
+    })
 
     return (
         <div className="w-full max-w-4xl h-[300px] text-xs">
