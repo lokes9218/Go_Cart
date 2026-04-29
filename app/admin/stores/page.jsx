@@ -4,25 +4,60 @@ import StoreInfo from "@/components/admin/StoreInfo"
 import Loading from "@/components/Loading"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import axios from "axios"
 
+import { useAuth ,useUser} from "@clerk/nextjs"
 export default function AdminStores() {
-
+    const getToken=useAuth().getToken
+    const user=useUser().user
     const [stores, setStores] = useState([])
     const [loading, setLoading] = useState(true)
 
     const fetchStores = async () => {
-        setStores(storesDummyData)
-        setLoading(false)
+        try {
+            const token = await getToken()
+            const res = await axios.get("/api/admin/stores", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            setStores(res.data.stores)
+            setLoading(false)
+        } catch (error) {
+            toast.error("Failed to fetch stores")
+            setLoading(false)
+        }
     }
 
     const toggleIsActive = async (storeId) => {
-        // Logic to toggle the status of a store
+        try {
+            // Logic to toggle the status of a store
+            const token = await getToken()
+            const store = stores.find((store) => store.id === storeId)
+            const res = await axios.post("/api/admin/togglestoreactive", { storeId, isActive: !store.isActive }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            if (res.status === 200) {
+                toast.success("Store status updated successfully")
+                fetchStores()
+            } else {
+                toast.error("Failed to update store status")
+            }
+        } catch (error) {
+            toast.error("Failed to update store status")
+            setLoading(false)
+        }
 
     }
 
     useEffect(() => {
-        fetchStores()
-    }, [])
+        if (user){
+
+            fetchStores()
+        }
+    }, [user])
 
     return !loading ? (
         <div className="text-slate-500 mb-28">

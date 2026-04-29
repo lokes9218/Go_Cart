@@ -3,11 +3,10 @@ import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import toast from "react-hot-toast"
 import { DeleteIcon } from "lucide-react"
-import { couponDummyData } from "@/assets/assets"
-
+import { useAuth } from "@clerk/nextjs"
 export default function AdminCoupons() {
-
-    const [coupons, setCoupons] = useState([])
+    const getToken=useAuth().getToken
+    const [coupons, setCoupons] =  useState([])
 
     const [newCoupon, setNewCoupon] = useState({
         code: '',
@@ -20,22 +19,96 @@ export default function AdminCoupons() {
     })
 
     const fetchCoupons = async () => {
-        setCoupons(couponDummyData)
+        try {
+            const token = await getToken()
+            const res = await fetch("/api/inngest/coupon", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            const data = await res.json()
+            setCoupons(data.coupons)
+        } catch (error) {
+            console.error("Error fetching coupons:", error)
+            toast.error("Failed to fetch coupons")  
+
+        }
     }
 
     const handleAddCoupon = async (e) => {
         e.preventDefault()
-        // Logic to add a coupon
+        try {
+            const token = await getToken()
+            const res = await fetch("/api/inngest/coupon", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    coupon: newCoupon,
+                    discount: newCoupon.discount,
+                }),
+            })
+            if (res.status === 201) {
+                toast.success("Coupon added successfully")
+                setNewCoupon({
+                    code: '',
+                    description: '',
+                    discount: '',
+                    forNewUser: false,
+                    forMember: false,
+                    isPublic: false,
+                    expiresAt: new Date()
+                })
+                fetchCoupons()
+            } else {
+                toast.error("Failed to add coupon")
+            }
+        } catch (error) {
+            console.error("Error adding coupon:", error)
+            toast.error("Failed to add coupon")
+        }
 
 
     }
 
     const handleChange = (e) => {
-        setNewCoupon({ ...newCoupon, [e.target.name]: e.target.value })
+        const { name, value } = e.target
+        if (name === 'expiresAt') {
+            setNewCoupon({ ...newCoupon, expiresAt: new Date(value) })
+            return
+        }
+        setNewCoupon({ ...newCoupon, [name]: value })
     }
 
     const deleteCoupon = async (code) => {
         // Logic to delete a coupon
+        try {
+            const token = await getToken()
+            const confirm = window.confirm("Are you sure you want to delete this coupon?")
+            if (!confirm) return
+            const res = await fetch("/api/inngest/coupon", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    searchparam: code,
+                }),
+            })
+            if (res.status === 200) {
+                toast.success("Coupon deleted successfully")
+                fetchCoupons()
+            } else {
+                toast.error("Failed to delete coupon")
+            }
+        } catch (error) {
+            console.error("Error deleting coupon:", error)
+            toast.error("Failed to delete coupon")
+        }
 
 
     }

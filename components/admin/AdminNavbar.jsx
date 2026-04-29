@@ -13,7 +13,9 @@ const AdminNavbar = () => {
                 </p>
             </Link>
             <div className="flex items-center gap-3">
-                <p>Hi, Admin</p>
+                {/* <Image className="w-14 h-14 rounded-full" src={assets.gs_logo} alt="" width={80} height={80} /> */}
+                                
+                <p>Hi,  Lokeswaran S</p>
             </div>
         </div>
     )

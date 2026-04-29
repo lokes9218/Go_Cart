@@ -3,13 +3,18 @@ import { dummyAdminDashboardData } from "@/assets/assets"
 import Loading from "@/components/Loading"
 import OrdersAreaChart from "@/components/OrdersAreaChart"
 import { CircleDollarSignIcon, ShoppingBasketIcon, StoreIcon, TagsIcon } from "lucide-react"
-import { useEffect, useState } from "react"
-
+import { useEffect, useRef, useState } from "react"
+import { useAuth, useUser } from "@clerk/nextjs"
+import toast from "react-hot-toast"
+import axios from "axios"
 export default function AdminDashboard() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
 
+    const { isLoaded } = useUser()
+    const { getToken } = useAuth()
     const [loading, setLoading] = useState(true)
+    const didFetchRef = useRef(false)
     const [dashboardData, setDashboardData] = useState({
         products: 0,
         revenue: 0,
@@ -25,14 +30,52 @@ export default function AdminDashboard() {
         { title: 'Total Stores', value: dashboardData.stores, icon: StoreIcon },
     ]
 
+    const normalizeDashboardPayload = (payload) => {
+        const safe = payload && typeof payload === 'object' ? payload : {}
+        const allOrders = Array.isArray(safe.allOrders)
+            ? safe.allOrders
+            : Array.isArray(safe.orders)
+                ? safe.orders
+                : []
+
+        return {
+            products: safe.products ?? safe.totalProducts ?? 0,
+            revenue: safe.revenue ?? safe.totalRevenue ?? 0,
+            orders: safe.orders ?? safe.totalOrders ?? 0,
+            stores: safe.stores ?? safe.totalStores ?? 0,
+            allOrders,
+        }
+    }
+
     const fetchDashboardData = async () => {
-        setDashboardData(dummyAdminDashboardData)
-        setLoading(false)
+        // setDashboardData(dummyAdminDashboardData)
+        // setLoading(false)
+        try {
+            let token
+            try {
+                token = await getToken()
+            } catch {
+                token = undefined
+            }
+            const data = await axios.get("/api/admin/dashboard", {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            })
+            setDashboardData(normalizeDashboardPayload(data.data))
+            setLoading(false)
+        } catch (error) {
+            const message = error?.response?.data?.error || "Failed to fetch dashboard data"
+            toast.error(message)
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
+        if (!isLoaded) return
+        if (didFetchRef.current) return
+        didFetchRef.current = true
         fetchDashboardData()
-    }, [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoaded])
 
     if (loading) return <Loading />
 

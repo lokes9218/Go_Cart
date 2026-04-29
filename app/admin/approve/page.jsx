@@ -4,27 +4,58 @@ import StoreInfo from "@/components/admin/StoreInfo"
 import Loading from "@/components/Loading"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
-
+import axios from "axios"
+import { useAuth,useUser } from "@clerk/nextjs"
 export default function AdminApprove() {
+    const getToken=useAuth().getToken
+    const user=useUser().user
 
     const [stores, setStores] = useState([])
     const [loading, setLoading] = useState(true)
 
 
     const fetchStores = async () => {
-        setStores(storesDummyData)
-        setLoading(false)
+        try {
+            const token = await getToken()
+            const res = await axios.get("/api/admin/pendingstores", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            setStores(res.data.stores)
+            setLoading(false)
+        } catch (error) {
+            toast.error("Failed to fetch pending stores")
+            setLoading(false)
+        }
     }
 
     const handleApprove = async ({ storeId, status }) => {
-        // Logic to approve a store
-
-
+        try {
+            const token = await getToken()
+            const data=await axios.post("/api/admin/approvestore", { storeId, status }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            if(data.status===200){
+                toast.success(`Store ${status === 'approved' ? 'approved' : 'rejected'} successfully`)
+                fetchStores()
+            } else {
+                toast.error("Failed to update store status")
+            }
+        } catch (error) {
+            toast.error("Failed to update store status")
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
+        if (user){
             fetchStores()
-    }, [])
+
+        }
+    }, [user])
 
     return !loading ? (
         <div className="text-slate-500 mb-28">

@@ -5,38 +5,61 @@ import prisma from "@/lib/prisma";
 export async function GET(request) {
     try {
         const { userId } = getAuth(request);
-        const storeid = request.nextUrl.searchParams.get("storeid");
-        // check if the user is authenticated
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const adminCheck = await admin(request);
+        if (adminCheck.status !== 200) {
+            const payload = await adminCheck.json().catch(() => ({}));
+            return NextResponse.json(payload, { status: adminCheck.status });
         }
-        if (!storeid) {
-            return NextResponse.json({ error: "storeid is required" }, { status: 400 });
-        }
-        // orders products
-        const orders = await prisma.order.findMany({
-            where: {
-                storeId: storeid,
-            },
-            include: {
-                product: true,
-            },
+
+        const storeIdParam = request.nextUrl.searchParams.get("storeid")?.trim();
+        const storeId = storeIdParam || undefined;
+        const orderWhere = storeId ? { storeId } : undefined;
+        const productWhere = storeId ? { storeId } : undefined;
+
+        // Keep chart payload bounded so the endpoint stays fast on serverless DBs.
+        // (Orders chart is per-day; recent history is usually enough.)
+        const since = new Date();
+        since.setDate(since.getDate() - 90);
+        const chartWhere = storeId
+            ? { storeId, createdAt: { gte: since } }
+            : { createdAt: { gte: since } };
+
+        // Run sequentially to avoid connection pool contention on Neon/serverless.
+        const products = await prisma.product.count({ where: productWhere });
+        const stores = await prisma.store.count();
+        const ordersAgg = await prisma.order.aggregate({
+            where: orderWhere,
+            _sum: { total: true },
+            _count: { _all: true },
         });
-        // total revenue        const totalRevenue = orders.reduce((acc, order) => acc + order.product.price, 0);
-        // total orders
-        const totalOrders = orders.length;
-        // total products
-        const totalProducts = await prisma.product.count({
-            where: {
-                storeId: storeid,
-            },
+        const allOrders = await prisma.order.findMany({
+            where: chartWhere,
+            select: { id: true, createdAt: true },
+            orderBy: { createdAt: "asc" },
         });
-        
-        
-        return NextResponse.json({ totalRevenue, totalOrders, totalProducts }, { status: 200 });    
+
+        const revenue = ordersAgg._sum.total ?? 0;
+        const orders = ordersAgg._count._all ?? 0;
+
+        return NextResponse.json(
+            {
+                products,
+                revenue,
+                orders,
+                stores,
+                allOrders,
+            },
+            { status: 200 }
+        );
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        const message =
+            process.env.NODE_ENV === "development"
+                ? (error?.message || String(error))
+                : "Internal Server Error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 

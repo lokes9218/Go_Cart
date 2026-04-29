@@ -9,19 +9,22 @@ import prisma from "@/lib/prisma";
 export async function GET(request){
     try {
         const { userId } = getAuth(request);
-        const isadmin = await admin(request);
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
-        if(isadmin.status === 403){
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const isadmin = await admin(request);
+        if (isadmin.status !== 200) {
+            const payload = await isadmin.json().catch(() => ({ error: "Forbidden" }));
+            return NextResponse.json(payload, { status: isadmin.status });
         }
-        const pendingStores = await prisma.store.findMany({
-            where:{
-                isApproved:false
-            },
+
+        const stores = await prisma.store.findMany({
+            where: { status: "pending" },
+            include: { user: true },
+            orderBy: { createdAt: "asc" },
         });
-        return NextResponse.json({ pendingStores }, { status: 200 });
+
+        return NextResponse.json({ stores }, { status: 200 });
     }
     catch(error){
         console.error("Error fetching pending stores:", error);

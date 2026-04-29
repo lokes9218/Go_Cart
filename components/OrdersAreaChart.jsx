@@ -3,8 +3,10 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 export default function OrdersAreaChart({ allOrders }) {
 
+    const safeOrders = Array.isArray(allOrders) ? allOrders : []
+
     // Group orders by date
-    const ordersPerDay = allOrders.reduce((acc, order) => {
+    const ordersPerDay = safeOrders.reduce((acc, order) => {
         const date = new Date(order.createdAt).toISOString().split('T')[0] // format: YYYY-MM-DD
         acc[date] = (acc[date] || 0) + 1
         return acc

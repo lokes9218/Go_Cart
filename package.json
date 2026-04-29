@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
+    "dev:turbopack": "next dev",
+    "dev:turbopack:unsafe": "next dev --turbopack",
+    "clean": "node -e \"const fs=require('fs'); const path=require('path'); const targets=['.next','.turbo','node_modules/.cache']; for(const t of targets){ try{ fs.rmSync(path.resolve(t),{recursive:true,force:true}); console.log('removed',t);}catch(e){ console.log('skip',t,e.message);} }\"",
     "build": "npx prisma generate && node --max-old-space-size=2048 ./node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "next lint"
