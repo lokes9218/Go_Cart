@@ -1,7 +1,13 @@
 import { serve } from "inngest/next";
 import { inngest } from "../../../inngest/client";
-import { SyncUserCreation, SyncUserUpdate, SyncUserDeletion } from "../../../inngest/function";
-import { SyncStoreCreation, SyncStoreUpdate, SyncStoreDeletion } from "../../../inngest/storeFunctions";
+import {
+  SyncUserCreation,
+  SyncUserUpdate,
+  SyncUserDeletion,
+  SyncStoreCreation,
+  SyncStoreUpdate,
+  SyncStoreDeletion,
+} from "../../../inngest/function";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
